@@ -19,6 +19,7 @@ from shortcut_builder import (
     create_shortcut,
     comment,
     text,
+    text_with_variable,
     ask,
     set_variable,
     menu_start,
@@ -29,6 +30,7 @@ from shortcut_builder import (
     end_if,
     show_alert,
     show_result,
+    show_result_with_variable,
 )
 
 
@@ -146,6 +148,82 @@ def test_if_has_value_structure():
     assert var_ref["Value"].get("VariableName") == "test_var", "Wrong variable name"
 
     print("✓ if_has_value structure is correct")
+
+
+def test_text_with_variable_structure():
+    """Test that text_with_variable generates correct token format"""
+    action, uuid = text_with_variable("Found sources: ", "ai_sources", "")
+    params = action["WFWorkflowActionParameters"]
+
+    assert "WFTextActionText" in params, "Missing WFTextActionText"
+    text_param = params["WFTextActionText"]
+
+    # Should be a dict with Value and WFSerializationType
+    assert isinstance(text_param, dict), (
+        "WFTextActionText should be a dict for variable interpolation"
+    )
+    assert text_param.get("WFSerializationType") == "WFTextTokenString", (
+        "Wrong serialization type"
+    )
+
+    value = text_param.get("Value", {})
+    assert "attachmentsByRange" in value, "Missing attachmentsByRange"
+    assert "string" in value, "Missing string"
+
+    # Check the string contains the placeholder character
+    assert "￼" in value["string"], "String should contain placeholder character ￼"
+
+    # Check attachmentsByRange has correct variable reference
+    attachments = value["attachmentsByRange"]
+    assert len(attachments) == 1, f"Should have 1 attachment, got {len(attachments)}"
+
+    # The key should be the position "{15, 1}" for "Found sources: " (15 chars)
+    range_key = list(attachments.keys())[0]
+    assert range_key == "{15, 1}", f"Range key should be '{{15, 1}}', got '{range_key}'"
+
+    var_ref = attachments[range_key]
+    assert var_ref.get("Type") == "Variable", "Attachment Type should be 'Variable'"
+    assert var_ref.get("VariableName") == "ai_sources", "Wrong variable name"
+
+    print("✓ text_with_variable structure is correct")
+
+
+def test_show_result_with_variable_structure():
+    """Test that show_result_with_variable generates correct token format"""
+    action = show_result_with_variable("Found sources:\n\n", "ai_sources", "")
+    params = action["WFWorkflowActionParameters"]
+
+    assert "Text" in params, "Missing Text parameter"
+    text_param = params["Text"]
+
+    # Should be a dict with Value and WFSerializationType
+    assert isinstance(text_param, dict), (
+        "Text should be a dict for variable interpolation"
+    )
+    assert text_param.get("WFSerializationType") == "WFTextTokenString", (
+        "Wrong serialization type"
+    )
+
+    value = text_param.get("Value", {})
+    assert "attachmentsByRange" in value, "Missing attachmentsByRange"
+    assert "string" in value, "Missing string"
+
+    # Check the string contains the placeholder character
+    assert "￼" in value["string"], "String should contain placeholder character ￼"
+
+    # Check attachmentsByRange has correct variable reference
+    attachments = value["attachmentsByRange"]
+    assert len(attachments) == 1, f"Should have 1 attachment, got {len(attachments)}"
+
+    # The key should be the position "{16, 1}" for "Found sources:\n\n" (16 chars)
+    range_key = list(attachments.keys())[0]
+    assert range_key == "{16, 1}", f"Range key should be '{{16, 1}}', got '{range_key}'"
+
+    var_ref = attachments[range_key]
+    assert var_ref.get("Type") == "Variable", "Attachment Type should be 'Variable'"
+    assert var_ref.get("VariableName") == "ai_sources", "Wrong variable name"
+
+    print("✓ show_result_with_variable structure is correct")
 
 
 def test_menu_structure():
@@ -271,6 +349,8 @@ if __name__ == "__main__":
     print("Running shortcut tests...\n")
 
     test_if_has_value_structure()
+    test_text_with_variable_structure()
+    test_show_result_with_variable_structure()
     test_menu_structure()
     test_nested_control_flow()
     test_generated_shortcuts()

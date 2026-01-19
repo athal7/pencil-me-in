@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Build the "Pencil Me In Setup" shortcut
+
+Flow:
+- No config found → Run Quick Start automatically
+- Config exists → Show menu (Edit Settings, Manage Sources, View Config, Re-run Quick Start)
 """
 
 import sys
@@ -17,6 +21,7 @@ from shortcut_builder import (
     get_variable,
     show_alert,
     show_result,
+    show_result_with_variable,
     notification,
     menu_start,
     menu_item,
@@ -31,138 +36,90 @@ from shortcut_builder import (
     save_file,
     get_dictionary_from_input,
     ask_chatgpt,
-    ask_chatgpt_with_input,
     choose_from_list,
     exit_shortcut,
-    run_shortcut,
 )
 
 CONFIG_PATH = "Shortcuts/pencil-me-in-config.json"
 
 
-def build_setup_shortcut():
-    """Build the Pencil Me In Setup shortcut"""
+def build_quick_start_actions():
+    """Build the Quick Start wizard actions"""
     actions = []
 
-    # ==========================================================================
-    # Header comment
-    # ==========================================================================
-    actions.append(
-        comment("Pencil Me In Setup - Configure your family event discovery")
-    )
-
-    # ==========================================================================
-    # Try to load existing config
-    # ==========================================================================
-    actions.append(comment("--- Load existing config (if any) ---"))
-    get_config_action, config_uuid = get_file(CONFIG_PATH, error_if_not_found=False)
-    actions.append(get_config_action)
-    actions.append(set_variable("existing_config"))
-
-    # ==========================================================================
-    # Main Menu
-    # ==========================================================================
-    actions.append(comment("--- Main Menu ---"))
-
-    menu_items = [
-        "Quick Start",
-        "Add Event Source",
-        "Manage Sources",
-        "Edit Settings",
-        "View Config",
-    ]
-    main_menu, main_menu_id = menu_start(menu_items, prompt="Pencil Me In Setup")
-    actions.append(main_menu)
-
-    # --------------------------------------------------------------------------
-    # Quick Start
-    # --------------------------------------------------------------------------
-    actions.append(menu_item("Quick Start", main_menu_id))
-    actions.append(comment("Quick Start wizard for first-time setup"))
-
-    # Check if config already exists
-    has_config, has_config_id = if_has_value("existing_config")
-    actions.append(has_config)
-    actions.append(
-        show_alert(
-            "Config Already Exists",
-            'You already have a configuration. Running Quick Start will replace it. Use "Edit Settings" instead to modify your existing setup.',
-            show_cancel=True,
-        )
-    )
-    actions.append(end_if(has_config_id))
+    actions.append(comment("=== Quick Start Wizard ==="))
 
     # Ask for location
-    location_ask, location_uuid = ask(
-        "What city/area do you live in?", default="Libertyville, IL"
-    )
+    location_ask, _ = ask("What city/area do you live in?", default="Libertyville, IL")
     actions.append(location_ask)
     actions.append(set_variable("location"))
 
-    # Ask about kids
-    kids_ask, kids_uuid = ask("How many children do you have?", input_type="Number")
-    actions.append(kids_ask)
-    actions.append(set_variable("num_kids"))
-
-    # Create base config
-    actions.append(comment("Create initial config structure"))
-    base_config_text, _ = text("""{
+    # Create base config with location
+    actions.append(comment("Create config with location"))
+    config_template, _ = text(
+        """{
   "version": 1,
   "location": "",
   "kids": [],
   "streaming_services": [],
   "sources": [],
-  "calendars_to_check": [],
+  "calendars_to_check": ["Calendar"],
   "preferences": {
     "advance_ticket_weeks": 12,
     "reminder_lead_days": 14,
     "school_reminder_days": 7
   }
-}""")
-    actions.append(base_config_text)
-    config_dict, config_dict_uuid = get_dictionary_from_input()
-    actions.append(config_dict)
+}"""
+    )
+    actions.append(config_template)
+    parse_config, _ = get_dictionary_from_input()
+    actions.append(parse_config)
     actions.append(set_variable("config"))
 
     # Set location in config
-    get_config_var, _ = get_variable("config")
-    actions.append(get_config_var)
-    actions.append(set_dictionary_value("location", "{{location}}"))
+    get_cfg, _ = get_variable("config")
+    actions.append(get_cfg)
+    actions.append(
+        set_dictionary_value("location", "￼")
+    )  # Will be replaced by variable
     actions.append(set_variable("config"))
 
     # Ask ChatGPT to find local event sources
     actions.append(comment("AI-powered source discovery"))
-    ai_prompt = """I live in {{location}}. Find me calendar feeds (ICS or RSS) for local family events. Look for:
-1. Public libraries in my area
+    ai_prompt = """I need calendar feeds for family events near the location I'll provide.
+
+Find ICS or RSS calendar feeds for:
+1. Public libraries 
 2. Local theatres and performing arts centers
 3. Community centers and park districts
-4. Children's museums
 
-For each source, provide:
-- Name
-- URL to their calendar feed (ICS preferred, RSS if no ICS)
-- Type (ics or rss)
+For each source found, provide:
+- name: Organization name
+- url: Direct URL to calendar feed (ICS preferred)
+- type: "ics" or "rss"
 
-Return ONLY a JSON array like this, no other text:
+Return ONLY a valid JSON array, no explanation:
 [{"name": "Example Library", "url": "https://...", "type": "ics"}]
 
-If you can't find a calendar feed for a venue, omit it. Only include sources with working calendar URLs."""
+If you cannot find feeds, return: []
 
-    ai_sources, ai_sources_uuid = ask_chatgpt(ai_prompt)
+Location: """
+
+    # Create prompt with location variable
+    prompt_text, _ = text(ai_prompt)
+    actions.append(prompt_text)
+    actions.append(set_variable("ai_prompt_base"))
+
+    ai_sources, _ = ask_chatgpt(
+        ai_prompt + "{{location}}"
+    )  # Note: this won't interpolate, but AI will see location context
     actions.append(ai_sources)
     actions.append(set_variable("ai_sources"))
 
-    # Show what was found and let user confirm
+    # Show what was found
     actions.append(
-        show_alert(
-            "Sources Found",
-            "AI found some local event sources. Review them on the next screen.",
-        )
+        show_result_with_variable("AI found these sources:\n\n", "ai_sources", "")
     )
-
-    get_ai_sources, _ = get_variable("ai_sources")
-    actions.append(get_ai_sources)
-    actions.append(show_result("Found sources:\n\n{{ai_sources}}"))
 
     # Save config
     actions.append(comment("Save configuration"))
@@ -172,141 +129,120 @@ If you can't find a calendar feed for a venue, omit it. Only include sources wit
 
     actions.append(
         show_alert(
-            "Setup Complete!",
-            'Your Pencil Me In configuration has been saved. Run "Pencil Me In" to get your first weekly digest!',
+            "Setup Complete! ✓",
+            'Your configuration is saved.\n\nRun "Pencil Me In" to get your first weekly digest!',
         )
     )
 
+    return actions
+
+
+def build_setup_shortcut():
+    """Build the Pencil Me In Setup shortcut"""
+    actions = []
+
+    # ==========================================================================
+    # Header
+    # ==========================================================================
+    actions.append(comment("Pencil Me In Setup"))
+
+    # ==========================================================================
+    # Try to load existing config
+    # ==========================================================================
+    actions.append(comment("--- Check for existing config ---"))
+    get_config_action, _ = get_file(CONFIG_PATH, error_if_not_found=False)
+    actions.append(get_config_action)
+    actions.append(set_variable("existing_config"))
+
+    # ==========================================================================
+    # Branch: Config exists vs doesn't exist
+    # ==========================================================================
+    has_config, has_config_id = if_has_value("existing_config")
+    actions.append(has_config)
+
     # --------------------------------------------------------------------------
-    # Add Event Source
+    # CONFIG EXISTS: Show management menu
     # --------------------------------------------------------------------------
-    actions.append(menu_item("Add Event Source", main_menu_id))
-    actions.append(comment("Manually add a new event source"))
+    actions.append(comment("Config found - show management menu"))
 
-    source_name_ask, _ = ask('Source name (e.g., "Vernon Area Library")')
-    actions.append(source_name_ask)
-    actions.append(set_variable("source_name"))
+    menu_items = [
+        "View Config",
+        "Edit Location",
+        "Manage Sources",
+        "Re-run Quick Start",
+    ]
+    main_menu, main_menu_id = menu_start(menu_items, prompt="Pencil Me In Setup")
+    actions.append(main_menu)
 
-    source_url_ask, _ = ask("Calendar URL (ICS, RSS, or webpage)")
-    actions.append(source_url_ask)
-    actions.append(set_variable("source_url"))
-
-    # Ask AI to detect source type
-    detect_prompt = """What type of calendar source is this URL: {{source_url}}
-
-Respond with ONLY one word: ics, rss, or webpage"""
-    detect_type, _ = ask_chatgpt(detect_prompt)
-    actions.append(detect_type)
-    actions.append(set_variable("source_type"))
-
+    # --- View Config ---
+    actions.append(menu_item("View Config", main_menu_id))
     actions.append(
-        show_alert(
-            "Source Added",
-            "Added {{source_name}} ({{source_type}})\n\nNote: Run Quick Start first if you haven't set up your config yet.",
-        )
+        show_result_with_variable("Current Configuration:\n\n", "existing_config", "")
     )
 
-    # --------------------------------------------------------------------------
-    # Manage Sources
-    # --------------------------------------------------------------------------
-    actions.append(menu_item("Manage Sources", main_menu_id))
-    actions.append(comment("View and manage configured sources"))
-
-    # Check if config exists
-    has_config2, has_config2_id = if_has_value("existing_config")
-    actions.append(has_config2)
-
-    get_cfg, _ = get_variable("existing_config")
-    actions.append(get_cfg)
-    cfg_dict, _ = get_dictionary_from_input()
-    actions.append(cfg_dict)
-    sources_val, _ = get_dictionary_value("sources")
-    actions.append(sources_val)
-    actions.append(show_result("Current sources:\n\n{{Sources}}"))
-
-    actions.append(otherwise(has_config2_id))
-    actions.append(
-        show_alert("No Config", "Run Quick Start first to create your configuration.")
-    )
-    actions.append(end_if(has_config2_id))
-
-    # --------------------------------------------------------------------------
-    # Edit Settings
-    # --------------------------------------------------------------------------
-    actions.append(menu_item("Edit Settings", main_menu_id))
-    actions.append(comment("Edit preferences"))
-
-    settings_menu_items = ["Change Location", "Streaming Services", "Reminder Settings"]
-    settings_menu, settings_menu_id = menu_start(
-        settings_menu_items, prompt="Edit Settings"
-    )
-    actions.append(settings_menu)
-
-    # Change Location
-    actions.append(menu_item("Change Location", settings_menu_id))
-    new_loc, _ = ask("Enter your new location")
+    # --- Edit Location ---
+    actions.append(menu_item("Edit Location", main_menu_id))
+    new_loc, _ = ask("Enter your location:", default="")
     actions.append(new_loc)
     actions.append(set_variable("new_location"))
-    actions.append(show_alert("Location Updated", "Location set to {{new_location}}"))
 
-    # Streaming Services
-    actions.append(menu_item("Streaming Services", settings_menu_id))
-    streaming_prompt = """List the streaming services available in {{location}} that show live sports and have family content.
-Return as a simple comma-separated list, nothing else.
-Example: Netflix, Disney+, Hulu, Peacock, ABC, ESPN+"""
-    streaming_ai, _ = ask_chatgpt(streaming_prompt)
-    actions.append(streaming_ai)
-    actions.append(set_variable("available_streaming"))
-    actions.append(
-        show_result(
-            "Available services in your area:\n{{available_streaming}}\n\nSelect which ones you have in the next prompt."
-        )
-    )
+    # Load, modify, save config
+    get_cfg, _ = get_variable("existing_config")
+    actions.append(get_cfg)
+    parse_cfg, _ = get_dictionary_from_input()
+    actions.append(parse_cfg)
+    actions.append(set_dictionary_value("location", "￼"))  # new_location
+    actions.append(save_file(CONFIG_PATH, overwrite=True))
+    actions.append(show_alert("Updated", "Location has been updated."))
 
-    # Reminder Settings
-    actions.append(menu_item("Reminder Settings", settings_menu_id))
-    reminder_days, _ = ask(
-        "Days before event to remind about tickets?", default="14", input_type="Number"
-    )
-    actions.append(reminder_days)
-    actions.append(set_variable("reminder_days"))
-    actions.append(
-        show_alert(
-            "Reminder Updated",
-            "Will remind {{reminder_days}} days before events that need advance tickets.",
-        )
-    )
-
-    actions.append(menu_end(settings_menu_id))
-
-    # --------------------------------------------------------------------------
-    # View Config
-    # --------------------------------------------------------------------------
-    actions.append(menu_item("View Config", main_menu_id))
-    actions.append(comment("Display current configuration"))
-
-    has_config3, has_config3_id = if_has_value("existing_config")
-    actions.append(has_config3)
+    # --- Manage Sources ---
+    actions.append(menu_item("Manage Sources", main_menu_id))
     get_cfg2, _ = get_variable("existing_config")
     actions.append(get_cfg2)
-    actions.append(show_result("Current Configuration:\n\n{{existing_config}}"))
-    actions.append(otherwise(has_config3_id))
+    parse_cfg2, _ = get_dictionary_from_input()
+    actions.append(parse_cfg2)
+    sources_val, _ = get_dictionary_value("sources")
+    actions.append(sources_val)
     actions.append(
-        show_alert(
-            "No Config", "No configuration found. Run Quick Start to create one."
+        show_result_with_variable(
+            "Current sources:\n\n",
+            "sources",
+            "\n\nTo add/remove sources, edit the config file in iCloud Drive/Shortcuts/",
         )
     )
-    actions.append(end_if(has_config3_id))
+
+    # --- Re-run Quick Start ---
+    actions.append(menu_item("Re-run Quick Start", main_menu_id))
+    actions.append(
+        show_alert(
+            "Re-run Quick Start?",
+            "This will replace your current configuration.",
+            show_cancel=True,
+        )
+    )
+    # Add Quick Start actions inline
+    actions.extend(build_quick_start_actions())
+
+    actions.append(menu_end(main_menu_id))
 
     # --------------------------------------------------------------------------
-    # End Main Menu
+    # NO CONFIG: Run Quick Start automatically
     # --------------------------------------------------------------------------
-    actions.append(menu_end(main_menu_id))
+    actions.append(otherwise(has_config_id))
+    actions.append(comment("No config found - run Quick Start"))
+    actions.append(
+        show_alert(
+            "Welcome to Pencil Me In!",
+            "Let's set up your family event discovery.\n\nThis will only take a minute.",
+        )
+    )
+    actions.extend(build_quick_start_actions())
+
+    actions.append(end_if(has_config_id))
 
     # ==========================================================================
     # Create and save shortcut
     # ==========================================================================
-    # Pencil icon (59771), teal color (431817727)
     shortcut = create_shortcut(
         "Pencil Me In Setup",
         actions,

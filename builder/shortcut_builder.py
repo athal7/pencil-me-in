@@ -75,6 +75,44 @@ def text(content: str, output_name: str = None) -> tuple[dict, str]:
     return action, action_uuid
 
 
+def text_with_variable(
+    prefix: str, variable_name: str, suffix: str = ""
+) -> tuple[dict, str]:
+    """
+    Create a text action with an embedded variable.
+    Example: text_with_variable("Hello, ", "name", "!") -> "Hello, {name}!"
+    Returns (action, uuid).
+    """
+    action_uuid = new_uuid()
+    # The ￼ character (U+FFFC) is a placeholder for the variable
+    placeholder = "￼"
+    full_string = f"{prefix}{placeholder}{suffix}"
+
+    # Calculate the position of the placeholder
+    pos = len(prefix)
+    range_key = f"{{{pos}, 1}}"
+
+    action = {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFTextActionText": {
+                "Value": {
+                    "attachmentsByRange": {
+                        range_key: {
+                            "Type": "Variable",
+                            "VariableName": variable_name,
+                        }
+                    },
+                    "string": full_string,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        },
+    }
+    return action, action_uuid
+
+
 def ask(
     question: str, default: str = None, input_type: str = "Text"
 ) -> tuple[dict, str]:
@@ -132,11 +170,42 @@ def show_alert(title: str, message: str, show_cancel: bool = False) -> dict:
 
 
 def show_result(text: str) -> dict:
-    """Show result (output)"""
+    """Show result (output). For variable interpolation, use show_result_with_variable."""
     return {
         "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
         "WFWorkflowActionParameters": {
             "Text": text,
+        },
+    }
+
+
+def show_result_with_variable(
+    prefix: str, variable_name: str, suffix: str = ""
+) -> dict:
+    """
+    Show result with an embedded variable.
+    Example: show_result_with_variable("Found: ", "data", "") -> displays "Found: {data value}"
+    """
+    placeholder = "￼"
+    full_string = f"{prefix}{placeholder}{suffix}"
+    pos = len(prefix)
+    range_key = f"{{{pos}, 1}}"
+
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+        "WFWorkflowActionParameters": {
+            "Text": {
+                "Value": {
+                    "attachmentsByRange": {
+                        range_key: {
+                            "Type": "Variable",
+                            "VariableName": variable_name,
+                        }
+                    },
+                    "string": full_string,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
         },
     }
 
