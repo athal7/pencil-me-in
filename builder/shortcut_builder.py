@@ -17,8 +17,13 @@ def create_shortcut(
     actions: list[dict],
     icon_color: int = 4282601983,
     icon_glyph: int = 59771,
+    import_questions: list[dict] = None,
 ) -> dict:
-    """Create a shortcut plist structure"""
+    """Create a shortcut plist structure
+
+    Args:
+        import_questions: List of import question dicts from import_question()
+    """
     return {
         "WFWorkflowClientVersion": "2605.0.5",
         "WFWorkflowClientRelease": "7.0",
@@ -29,7 +34,7 @@ def create_shortcut(
             "WFWorkflowIconStartColor": icon_color,
             "WFWorkflowIconGlyphNumber": icon_glyph,
         },
-        "WFWorkflowImportQuestions": [],
+        "WFWorkflowImportQuestions": import_questions or [],
         "WFWorkflowInputContentItemClasses": [
             "WFStringContentItem",
             "WFGenericFileContentItem",
@@ -37,6 +42,36 @@ def create_shortcut(
         "WFWorkflowActions": actions,
         "WFWorkflowTypes": ["NCWidget", "WatchKit"],
     }
+
+
+def import_question(
+    parameter_key: str,
+    action_index: int,
+    text: str = "",
+    default_value: str = "",
+    category: str = "Parameter",
+) -> dict:
+    """Create an import question that prompts user when shortcut is imported.
+
+    Args:
+        parameter_key: The parameter name in the action (e.g., "WFTextActionText")
+        action_index: Index of the action in the actions list (0-based)
+        text: The question/prompt shown to the user
+        default_value: Default value to show
+        category: Usually "Parameter"
+
+    Returns a dict to add to import_questions list.
+    """
+    q = {
+        "Category": category,
+        "ActionIndex": action_index,
+        "ParameterKey": parameter_key,
+    }
+    if text:
+        q["Text"] = text
+    if default_value:
+        q["DefaultValue"] = default_value
+    return q
 
 
 def save_shortcut(shortcut: dict, path: str):
@@ -139,6 +174,27 @@ def set_variable(name: str, input_ref: str = None) -> dict:
     return {
         "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": params,
+    }
+
+
+def set_variable_from_action(
+    name: str, action_uuid: str, output_name: str = "Result"
+) -> dict:
+    """
+    Set a variable from a specific action's output (Magic Variable).
+    Use this for third-party app intents that don't auto-pass output to pipeline.
+
+    Args:
+        name: The variable name to create
+        action_uuid: The UUID of the action whose output to capture
+        output_name: The name of the output (default "Result", may vary by intent)
+    """
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": name,
+            "WFInput": action_output_ref(action_uuid, output_name),
+        },
     }
 
 
@@ -426,6 +482,25 @@ def set_dictionary_value(key: str, value: str) -> dict:
     }
 
 
+def set_dictionary_value_from_variable(key: str, variable_name: str) -> dict:
+    """Set dictionary value from a variable"""
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvalueforkey",
+        "WFWorkflowActionParameters": {
+            "WFDictionaryKey": key,
+            "WFDictionaryValue": {
+                "Value": {
+                    "attachmentsByRange": {
+                        "{0, 1}": {"Type": "Variable", "VariableName": variable_name}
+                    },
+                    "string": "￼",
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        },
+    }
+
+
 # =============================================================================
 # Files
 # =============================================================================
@@ -501,16 +576,54 @@ def get_url_variable(variable_name: str) -> tuple[dict, str]:
 
 def ask_chatgpt(prompt: str) -> tuple[dict, str]:
     """
-    Ask ChatGPT (via Apple's built-in "Use Model" action).
-    Uses the system default model.
+    Ask ChatGPT via the ChatGPT app (com.openai.chat.AskIntent).
+    This has internet access unlike Apple's built-in model.
     Returns (action, uuid).
     """
     action_uuid = new_uuid()
     return {
-        "WFWorkflowActionIdentifier": "is.workflow.actions.askllm",
+        "WFWorkflowActionIdentifier": "com.openai.chat.AskIntent",
         "WFWorkflowActionParameters": {
             "UUID": action_uuid,
-            "WFLLMPrompt": prompt,
+            "prompt": prompt,
+            "newChat": True,
+            "ShowWhenRun": False,
+        },
+    }, action_uuid
+
+
+def ask_chatgpt_with_variable(
+    prefix: str, variable_name: str, suffix: str = "", show_when_run: bool = True
+) -> tuple[dict, str]:
+    """
+    Ask ChatGPT (via ChatGPT app) with a variable embedded in the prompt.
+    Example: ask_chatgpt_with_variable("Find events in ", "location", ". Return JSON.")
+    Returns (action, uuid).
+
+    Args:
+        show_when_run: If True, shows ChatGPT app while running (needed to capture output)
+    """
+    action_uuid = new_uuid()
+    placeholder = "￼"
+    full_string = f"{prefix}{placeholder}{suffix}"
+    pos = len(prefix)
+    range_key = f"{{{pos}, 1}}"
+
+    return {
+        "WFWorkflowActionIdentifier": "com.openai.chat.AskIntent",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "prompt": {
+                "Value": {
+                    "attachmentsByRange": {
+                        range_key: {"Type": "Variable", "VariableName": variable_name}
+                    },
+                    "string": full_string,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+            "newChat": True,
+            "ShowWhenRun": show_when_run,
         },
     }, action_uuid
 
@@ -518,7 +631,7 @@ def ask_chatgpt(prompt: str) -> tuple[dict, str]:
 def ask_chatgpt_with_input(
     prompt_template: str, input_variable: str
 ) -> tuple[dict, str]:
-    """Ask ChatGPT with variable interpolation. Returns (action, uuid)."""
+    """Ask ChatGPT with variable at START of prompt. Returns (action, uuid)."""
     action_uuid = new_uuid()
     return {
         "WFWorkflowActionIdentifier": "is.workflow.actions.askllm",
@@ -530,6 +643,128 @@ def ask_chatgpt_with_input(
                         "{0, 1}": {"Type": "Variable", "VariableName": input_variable}
                     },
                     "string": f"￼\n\n{prompt_template}",
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        },
+    }, action_uuid
+
+
+def ask_apple_ai(
+    prompt: str, model: str = "ChatGPT", output_format: str = "Text"
+) -> tuple[dict, str]:
+    """
+    Ask Apple Intelligence.
+    Uses is.workflow.actions.askllm - the native Apple AI action.
+
+    Args:
+        model: "Cloud", "OnDevice", or "ChatGPT" (Extension)
+        output_format: "Automatic", "Text", "Number", "Date", "Boolean", "List", "Dictionary"
+
+    Returns (action, uuid).
+    """
+    action_uuid = new_uuid()
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.askllm",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFLLMModel": model,
+            "WFLLMOutputFormat": output_format,
+            "WFLLMPrompt": prompt,
+        },
+    }, action_uuid
+
+
+def ask_apple_ai_with_variable(
+    prefix: str,
+    variable_name: str,
+    suffix: str = "",
+    model: str = "ChatGPT",
+    output_format: str = "Text",
+) -> tuple[dict, str]:
+    """
+    Ask Apple Intelligence with a variable embedded in the prompt.
+    Uses is.workflow.actions.askllm - the native Apple AI action.
+
+    Args:
+        model: "Cloud", "OnDevice", or "ChatGPT" (Extension)
+        output_format: "Automatic", "Text", "Number", "Date", "Boolean", "List", "Dictionary"
+
+    Returns (action, uuid).
+    """
+    action_uuid = new_uuid()
+    placeholder = "￼"
+    full_string = f"{prefix}{placeholder}{suffix}"
+    pos = len(prefix)
+    range_key = f"{{{pos}, 1}}"
+
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.askllm",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFLLMModel": model,
+            "WFLLMOutputFormat": output_format,
+            "WFLLMPrompt": {
+                "Value": {
+                    "attachmentsByRange": {
+                        range_key: {"Type": "Variable", "VariableName": variable_name}
+                    },
+                    "string": full_string,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        },
+    }, action_uuid
+
+
+def ask_apple_ai_with_variables(
+    prompt_template: str,
+    variable_names: list[str],
+    model: str = "ChatGPT",
+    output_format: str = "Text",
+) -> tuple[dict, str]:
+    """
+    Ask Apple Intelligence with multiple variables embedded in the prompt.
+    Uses {variable_name} placeholders in the template.
+
+    Args:
+        prompt_template: Prompt with {var1}, {var2} placeholders
+        variable_names: List of variable names matching placeholders
+        model: "Cloud", "OnDevice", or "ChatGPT" (Extension)
+        output_format: "Automatic", "Text", "Number", "Date", "Boolean", "List", "Dictionary"
+
+    Returns (action, uuid).
+    """
+    action_uuid = new_uuid()
+    placeholder = "￼"  # U+FFFC
+
+    # Build string with placeholders and track positions
+    result_string = prompt_template
+    attachments = {}
+
+    for var_name in variable_names:
+        search_pattern = "{" + var_name + "}"
+        pos = result_string.find(search_pattern)
+        if pos != -1:
+            # Replace with placeholder
+            result_string = (
+                result_string[:pos]
+                + placeholder
+                + result_string[pos + len(search_pattern) :]
+            )
+            range_key = f"{{{pos}, 1}}"
+            attachments[range_key] = {"Type": "Variable", "VariableName": var_name}
+
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.askllm",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFLLMModel": model,
+            "WFLLMOutputFormat": output_format,
+            "WFLLMPrompt": {
+                "Value": {
+                    "attachmentsByRange": attachments,
+                    "string": result_string,
                 },
                 "WFSerializationType": "WFTextTokenString",
             },
@@ -681,4 +916,87 @@ def get_dictionary_from_input() -> tuple[dict, str]:
     return {
         "WFWorkflowActionIdentifier": "is.workflow.actions.detect.dictionary",
         "WFWorkflowActionParameters": {"UUID": action_uuid},
+    }, action_uuid
+
+
+def list_action(items: list[str]) -> tuple[dict, str]:
+    """Create a list. Returns (action, uuid)."""
+    action_uuid = new_uuid()
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.list",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFItems": items,
+        },
+    }, action_uuid
+
+
+def repeat_with_each(input_variable: str) -> tuple[dict, str]:
+    """Start a repeat with each loop. Returns (action, grouping_id)."""
+    grouping_id = new_uuid()
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": grouping_id,
+            "WFControlFlowMode": 0,  # Start
+            "WFInput": {
+                "Value": {"VariableName": input_variable, "Type": "Variable"},
+                "WFSerializationType": "WFTextTokenAttachment",
+            },
+        },
+    }, grouping_id
+
+
+def end_repeat(grouping_id: str) -> dict:
+    """End a repeat loop."""
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": grouping_id,
+            "WFControlFlowMode": 2,  # End
+        },
+    }
+
+
+def add_to_variable(variable_name: str) -> dict:
+    """Add input to a variable (appends to list)."""
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": variable_name,
+        },
+    }
+
+
+def get_current_date() -> tuple[dict, str]:
+    """Get current date/time. Returns (action, uuid)."""
+    action_uuid = new_uuid()
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.date",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFDateActionMode": "Current Date",
+        },
+    }, action_uuid
+
+
+def get_current_location() -> tuple[dict, str]:
+    """Get current device location. Returns (action, uuid)."""
+    action_uuid = new_uuid()
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.getcurrentlocation",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+        },
+    }, action_uuid
+
+
+def get_street_address() -> tuple[dict, str]:
+    """Get street address from location input. Returns (action, uuid)."""
+    action_uuid = new_uuid()
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.getaddressfromlocation",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+        },
     }, action_uuid
