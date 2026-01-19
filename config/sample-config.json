@@ -31,9 +31,9 @@
     },
     {
       "name": "Cook Memorial Library",
-      "url": "",
-      "type": "ics",
-      "enabled": false,
+      "url": "https://cooklib.libnet.info/events?r=days&n=90",
+      "type": "webpage",
+      "enabled": true,
       "categories": ["library", "kids"]
     }
   ],
