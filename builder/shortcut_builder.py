@@ -430,10 +430,10 @@ def get_url_variable(variable_name: str) -> tuple[dict, str]:
 # =============================================================================
 
 
-def ask_chatgpt(prompt: str, model: str = "Extension") -> tuple[dict, str]:
+def ask_chatgpt(prompt: str) -> tuple[dict, str]:
     """
-    Ask ChatGPT (via Apple's built-in integration).
-    Model options: 'Extension' (ChatGPT), 'Private Cloud Compute', 'On-Device'
+    Ask ChatGPT (via Apple's built-in "Use Model" action).
+    Uses the system default model.
     Returns (action, uuid).
     """
     action_uuid = new_uuid()
@@ -442,13 +442,12 @@ def ask_chatgpt(prompt: str, model: str = "Extension") -> tuple[dict, str]:
         "WFWorkflowActionParameters": {
             "UUID": action_uuid,
             "WFLLMPrompt": prompt,
-            "WFLLMModel": model,
         },
     }, action_uuid
 
 
 def ask_chatgpt_with_input(
-    prompt_template: str, input_variable: str, model: str = "Extension"
+    prompt_template: str, input_variable: str
 ) -> tuple[dict, str]:
     """Ask ChatGPT with variable interpolation. Returns (action, uuid)."""
     action_uuid = new_uuid()
@@ -465,7 +464,6 @@ def ask_chatgpt_with_input(
                 },
                 "WFSerializationType": "WFTextTokenString",
             },
-            "WFLLMModel": model,
         },
     }, action_uuid
 
