@@ -8,8 +8,6 @@ Pencil Me In is a pair of Apple Shortcuts that helps busy parents discover local
 
 **[athal7.github.io/pencil-me-in](https://athal7.github.io/pencil-me-in)** — Mobile-friendly download page
 
-Or see [Building the Shortcuts](docs/building-shortcuts.md) to build them yourself.
-
 ## Features
 
 - **Local Events**: Libraries, theatres, community centers—discovered automatically for your area
@@ -102,8 +100,7 @@ See [docs/automation.md](docs/automation.md) for detailed instructions.
 
 ## Documentation
 
-- [Setup Guide](docs/setup-guide.md) - Detailed walkthrough with screenshots
-- [Building the Shortcuts](docs/building-shortcuts.md) - Step-by-step build instructions
+- [Setup Guide](docs/setup-guide.md) - Detailed walkthrough
 - [Automation](docs/automation.md) - Weekly trigger setup
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and fixes
 
