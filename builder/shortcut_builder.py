@@ -506,7 +506,9 @@ def set_dictionary_value_from_variable(key: str, variable_name: str) -> dict:
 # =============================================================================
 
 
-def get_file(path: str, error_if_not_found: bool = False) -> tuple[dict, str]:
+def get_file(
+    path: str, error_if_not_found: bool = False, service: str = "iCloud Drive"
+) -> tuple[dict, str]:
     """Get file from iCloud/Shortcuts folder. Returns (action, uuid)."""
     action_uuid = new_uuid()
     return {
@@ -516,6 +518,7 @@ def get_file(path: str, error_if_not_found: bool = False) -> tuple[dict, str]:
             "WFGetFilePath": path,
             "WFFileErrorIfNotFound": error_if_not_found,
             "WFShowFilePicker": False,
+            "WFFileStorageService": service,
         },
     }, action_uuid
 

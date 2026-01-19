@@ -28,7 +28,7 @@ from shortcut_builder import (
     ask_apple_ai_with_variables,
 )
 
-CONFIG_PATH = "Shortcuts/pencil-me-in-config.json"
+CONFIG_PATH = "pencil-me-in-config.json"
 
 PROMPT = """You are a family event assistant. Find upcoming events and create an ICS calendar file.
 
@@ -107,7 +107,7 @@ def build_main_shortcut():
     actions.append(comment("5. Save ICS"))
     get_ics, _ = get_variable("ics_content")
     actions.append(get_ics)
-    actions.append(save_file("Shortcuts/pencil-me-in-events.ics", overwrite=True))
+    actions.append(save_file("pencil-me-in-events.ics", overwrite=True))
 
     actions.append(
         show_alert(
