@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/pencil-me-in/schema/config-schema.json",
+  "title": "Pencil Me In Configuration",
+  "description": "Configuration schema for the Pencil Me In Apple Shortcuts",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Config schema version",
+      "default": 1
+    },
+    "location": {
+      "type": "string",
+      "description": "User's home location for finding local events",
+      "examples": ["Libertyville, IL", "San Francisco, CA"]
+    },
+    "kids": {
+      "type": "array",
+      "description": "Children in the family, with their schools",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Child's name"
+          },
+          "age": {
+            "type": "integer",
+            "description": "Child's age (used for age-appropriate filtering)"
+          },
+          "school": {
+            "type": "object",
+            "description": "School information and calendar",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "School name"
+              },
+              "district": {
+                "type": "string",
+                "description": "School district name"
+              },
+              "calendar_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to school/district calendar (ICS, RSS, or webpage)"
+              },
+              "calendar_type": {
+                "type": "string",
+                "enum": ["ics", "rss", "webpage"],
+                "description": "Type of calendar source"
+              }
+            },
+            "required": ["name", "calendar_url", "calendar_type"]
+          }
+        },
+        "required": ["name", "age"]
+      }
+    },
+    "streaming_services": {
+      "type": "array",
+      "description": "Streaming services the user has access to",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["ABC", "Peacock", "Netflix", "Disney+"]]
+    },
+    "sources": {
+      "type": "array",
+      "description": "Event sources (calendars, feeds, webpages)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable source name"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the calendar feed or webpage"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["ics", "rss", "webpage"],
+            "description": "Type of source"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this source is active"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["library", "theatre", "community", "kids", "sports", "other"]
+            },
+            "description": "Categories this source covers"
+          },
+          "added": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the source was added"
+          },
+          "last_success": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last successful fetch timestamp"
+          },
+          "last_sample": {
+            "type": "string",
+            "description": "Sample event from last successful fetch"
+          }
+        },
+        "required": ["name", "url", "type"]
+      }
+    },
+    "calendars_to_check": {
+      "type": "array",
+      "description": "Calendar names to check for conflicts",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["Work", "Family", "Personal"]]
+    },
+    "preferences": {
+      "type": "object",
+      "description": "User preferences",
+      "properties": {
+        "family_friendly_only": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only suggest family-friendly events"
+        },
+        "advance_ticket_weeks": {
+          "type": "integer",
+          "default": 12,
+          "description": "How many weeks ahead to look for advance ticket events"
+        },
+        "reminder_lead_days": {
+          "type": "integer",
+          "default": 14,
+          "description": "Days before event to create ticket purchase reminder"
+        },
+        "reminder_list": {
+          "type": "string",
+          "default": "Reminders",
+          "description": "Which Reminders list to use for ticket reminders"
+        },
+        "school_reminder_days": {
+          "type": "integer",
+          "default": 7,
+          "description": "Days before to remind about school days off"
+        },
+        "include_sports": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include sports recommendations"
+        },
+        "include_tv_premieres": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include TV premiere recommendations"
+        }
+      }
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time config was modified"
+    },
+    "last_run": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time Pencil Me In was executed"
+    }
+  },
+  "required": ["version", "location", "sources", "calendars_to_check"]
+}

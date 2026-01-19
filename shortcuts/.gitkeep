@@ -1,0 +1,14 @@
+# Placeholder for shortcut files
+# 
+# Once you build the shortcuts following docs/building-shortcuts.md,
+# export them here:
+#
+# - Pencil-Me-In-Setup.shortcut
+# - Pencil-Me-In.shortcut
+#
+# To export a shortcut:
+# 1. Open Shortcuts app
+# 2. Long-press the shortcut
+# 3. Tap Share
+# 4. Choose "Save to Files"
+# 5. Save to this directory

@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Streaming Services Reference",
+  "description": "Reference list of streaming services for the Setup shortcut multi-select",
+  "broadcast": {
+    "description": "Free over-the-air broadcast networks",
+    "services": [
+      "ABC",
+      "CBS",
+      "NBC",
+      "Fox",
+      "PBS",
+      "The CW"
+    ]
+  },
+  "streaming": {
+    "description": "Subscription streaming services",
+    "services": [
+      "Netflix",
+      "Disney+",
+      "Hulu",
+      "Amazon Prime Video",
+      "Apple TV+",
+      "Max (HBO)",
+      "Paramount+",
+      "Peacock",
+      "Discovery+",
+      "AMC+",
+      "Starz",
+      "Showtime",
+      "MGM+",
+      "Criterion Channel",
+      "Shudder",
+      "BritBox",
+      "Acorn TV"
+    ]
+  },
+  "live_tv": {
+    "description": "Live TV streaming services (cable replacement)",
+    "services": [
+      "YouTube TV",
+      "Hulu + Live TV",
+      "Sling TV",
+      "fuboTV",
+      "DirecTV Stream",
+      "Philo"
+    ]
+  },
+  "sports": {
+    "description": "Sports-specific streaming services",
+    "services": [
+      "ESPN+",
+      "NFL+",
+      "NBA League Pass",
+      "MLB.TV",
+      "NHL.TV",
+      "MLS Season Pass",
+      "DAZN",
+      "FloSports"
+    ]
+  },
+  "regional_sports": {
+    "description": "Regional sports networks (location-dependent)",
+    "note": "AI will suggest based on user location",
+    "examples": [
+      "Marquee Sports Network (Chicago Cubs)",
+      "NBC Sports Chicago",
+      "NBC Sports Bay Area",
+      "YES Network (NY Yankees)",
+      "NESN (Boston)",
+      "SportsNet LA (Dodgers)",
+      "Bally Sports (various regions)"
+    ]
+  },
+  "kids": {
+    "description": "Kid-focused streaming services",
+    "services": [
+      "Disney+",
+      "Noggin",
+      "PBS Kids",
+      "Kartoon Channel",
+      "Kidoodle.TV"
+    ]
+  }
+}

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pencil Me In - Family Event Finder</title>
+  <meta name="description" content="Find family events that actually fit your schedule. AI-powered Apple Shortcuts for busy parents.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>">
+  <style>
+    :root {
+      --primary: #5856D6;
+      --primary-dark: #4240a8;
+      --secondary: #34C759;
+      --background: #f5f5f7;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --text-secondary: #86868b;
+      --border: #d2d2d7;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #000000;
+        --card: #1c1c1e;
+        --text: #f5f5f7;
+        --text-secondary: #86868b;
+        --border: #38383a;
+      }
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .logo {
+      font-size: 4rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    
+    .tagline {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    
+    .download-section {
+      margin-bottom: 3rem;
+    }
+    
+    .download-card {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+    
+    .download-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .download-card p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 0.875rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 1rem;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    
+    .download-btn:hover {
+      background: var(--primary-dark);
+    }
+    
+    .download-btn.secondary {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    
+    .download-btn.secondary:hover {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .features {
+      margin-bottom: 3rem;
+    }
+    
+    .features h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    
+    @media (max-width: 500px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .feature {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+    }
+    
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .feature h4 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .feature p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    
+    .how-it-works {
+      margin-bottom: 3rem;
+    }
+    
+    .how-it-works h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .step {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .step-icon {
+      flex-shrink: 0;
+      width: 3rem;
+      height: 3rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    
+    .step-content h4 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .step-content p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    
+    .requirements {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+    }
+    
+    .requirements h3 {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+    }
+    
+    .requirements ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .requirements li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+    }
+    
+    .requirements li::before {
+      content: "✓";
+      color: var(--secondary);
+      font-weight: bold;
+    }
+    
+    .faq {
+      margin-bottom: 3rem;
+    }
+    
+    .faq h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .faq-item {
+      margin-bottom: 1.5rem;
+    }
+    
+    .faq-item h4 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .faq-item p {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+    
+    footer {
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    
+    footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .badge {
+      display: inline-block;
+      background: var(--secondary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.125rem 0.5rem;
+      border-radius: 1rem;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">✏️</div>
+      <h1>Pencil Me In</h1>
+      <p class="tagline">Find family events that actually fit your schedule</p>
+    </header>
+    
+    <section class="download-section">
+      <div class="download-card">
+        <h3><span class="step-number">1</span> Download Setup</h3>
+        <p>Configure your location, kids, schools, streaming services, and find local event sources with AI.</p>
+        <a href="https://www.icloud.com/shortcuts/SETUP_SHORTCUT_ID" class="download-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Get Pencil Me In Setup
+        </a>
+      </div>
+      
+      <div class="download-card">
+        <h3><span class="step-number">2</span> Download Main Shortcut</h3>
+        <p>Run weekly to get your personalized event digest with calendar integration and family sharing.</p>
+        <a href="https://www.icloud.com/shortcuts/MAIN_SHORTCUT_ID" class="download-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Get Pencil Me In
+        </a>
+      </div>
+      
+      <div class="download-card" style="background: transparent; border-style: dashed;">
+        <h3>🛠️ Build It Yourself</h3>
+        <p>Prefer to build the shortcuts manually? Follow our step-by-step guide.</p>
+        <a href="https://github.com/athal7/pencil-me-in/blob/main/docs/building-shortcuts.md" class="download-btn secondary">
+          View Build Instructions
+        </a>
+      </div>
+    </section>
+    
+    <section class="features">
+      <h2>Features</h2>
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="feature-icon">📍</div>
+          <h4>Local Events</h4>
+          <p>Libraries, theatres, community centers—discovered automatically</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏫</div>
+          <h4>School Calendars</h4>
+          <p>Track days off, early dismissals, and events for each kid</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✅</div>
+          <h4>Conflict-Free</h4>
+          <p>Only suggests events that fit your actual schedule</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏈</div>
+          <h4>Sports & TV</h4>
+          <p>Games and premieres on your streaming services</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🎟️</div>
+          <h4>Advance Tickets</h4>
+          <p>Alerts for events needing early booking (12 weeks out)</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">👨‍👩‍👧‍👦</div>
+          <h4>Family Sharing</h4>
+          <p>Text or email events to coordinate plans</p>
+        </div>
+      </div>
+    </section>
+    
+    <section class="how-it-works">
+      <h2>How It Works</h2>
+      
+      <div class="step">
+        <div class="step-icon">⚙️</div>
+        <div class="step-content">
+          <h4>Run Setup Once</h4>
+          <p>Enter your location, add your kids and their schools, pick your streaming services, and let AI find local event calendars.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-icon">🔍</div>
+        <div class="step-content">
+          <h4>AI Finds Sources</h4>
+          <p>ChatGPT discovers calendar feeds from libraries, theatres, and community centers in your area.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-icon">📅</div>
+        <div class="step-content">
+          <h4>Run Weekly</h4>
+          <p>The main shortcut fetches events, checks your calendar for conflicts, and creates a personalized digest.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-icon">📲</div>
+        <div class="step-content">
+          <h4>Add to Calendar</h4>
+          <p>Events are exported as an ICS file that opens directly in your Calendar app. Share with family via text.</p>
+        </div>
+      </div>
+    </section>
+    
+    <section class="requirements">
+      <h3>Requirements</h3>
+      <ul>
+        <li>iPhone or iPad with iOS 17+ (or Mac with Sonoma+)</li>
+        <li>Shortcuts app (built-in)</li>
+        <li>ChatGPT enabled in Shortcuts settings</li>
+        <li>Calendar access permission</li>
+        <li>Reminders access (optional, for ticket alerts)</li>
+      </ul>
+    </section>
+    
+    <section class="faq">
+      <h2>FAQ</h2>
+      
+      <div class="faq-item">
+        <h4>Is this free?</h4>
+        <p>Yes! The shortcuts are free and open source. The only cost is if you use ChatGPT beyond Apple's free tier.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h4>Where is my data stored?</h4>
+        <p>Your configuration is stored in your personal iCloud Drive. No data is sent to external servers except ChatGPT for AI processing.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h4>Can I automate it?</h4>
+        <p>Yes! Set up a personal automation in Shortcuts to run every Sunday morning and get your weekly digest automatically.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h4>What if a source stops working?</h4>
+        <p>Run Setup → Test Sources to check which feeds are working. You can remove broken ones and find new sources with AI.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h4>Can my spouse use it too?</h4>
+        <p>Each person needs to install the shortcuts on their own device. The config is personal to each iCloud account.</p>
+      </div>
+    </section>
+    
+    <footer>
+      <p>Made for busy parents by <a href="https://github.com/athal7">@athal7</a></p>
+      <a href="https://github.com/athal7/pencil-me-in" class="github-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        View on GitHub
+      </a>
+      <p style="margin-top: 1rem;">MIT License</p>
+    </footer>
+  </div>
+</body>
+</html>
