@@ -212,8 +212,11 @@ def if_equals(value: str, compare_to: str) -> tuple[dict, str]:
             "WFCondition": 4,  # Equals
             "WFConditionalActionString": compare_to,
             "WFInput": {
-                "Value": {"VariableName": value, "Type": "Variable"},
-                "WFSerializationType": "WFTextTokenAttachment",
+                "Type": "Variable",
+                "Variable": {
+                    "Value": {"VariableName": value, "Type": "Variable"},
+                    "WFSerializationType": "WFTextTokenAttachment",
+                },
             },
         },
     }, group_id
@@ -229,8 +232,11 @@ def if_has_value(variable_name: str) -> tuple[dict, str]:
             "WFControlFlowMode": 0,
             "WFCondition": 100,  # Has any value
             "WFInput": {
-                "Value": {"VariableName": variable_name, "Type": "Variable"},
-                "WFSerializationType": "WFTextTokenAttachment",
+                "Type": "Variable",
+                "Variable": {
+                    "Value": {"VariableName": variable_name, "Type": "Variable"},
+                    "WFSerializationType": "WFTextTokenAttachment",
+                },
             },
         },
     }, group_id
