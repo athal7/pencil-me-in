@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "location": "Libertyville, IL",
+  "kids": [
+    { "name": "Child 1", "age": 8 },
+    { "name": "Child 2", "age": 10 }
+  ],
+  "streaming_services": [
+    "Netflix",
+    "Disney+",
+    "Hulu",
+    "Amazon Prime Video",
+    "Apple TV+",
+    "ESPN+",
+    "Peacock"
+  ],
+  "sources": [
+    {
+      "name": "Libertyville Area Moms",
+      "url": "https://libertyvilleareamoms.com/?post_type=tribe_events&ical=1&eventDisplay=list",
+      "type": "ics",
+      "enabled": true,
+      "categories": ["community", "kids"]
+    },
+    {
+      "name": "Village of Libertyville",
+      "url": "https://www.libertyville.com/common/modules/iCalendar/iCalendar.aspx?catID=21&feed=calendar",
+      "type": "ics",
+      "enabled": true,
+      "categories": ["community"]
+    },
+    {
+      "name": "Cook Memorial Library",
+      "url": "",
+      "type": "ics",
+      "enabled": false,
+      "categories": ["library", "kids"]
+    }
+  ],
+  "calendars_to_check": ["Calendar"],
+  "preferences": {
+    "family_friendly_only": true,
+    "include_sports": true,
+    "include_tv_premieres": true
+  }
+}
