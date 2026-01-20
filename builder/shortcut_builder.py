@@ -471,6 +471,30 @@ def get_dictionary_value(key: str, input_uuid: str = None) -> tuple[dict, str]:
     }, action_uuid
 
 
+def get_dictionary_value_from_variable(
+    key: str, variable_name: str
+) -> tuple[dict, str]:
+    """Get value from dictionary stored in a variable. Returns (action, uuid)."""
+    action_uuid = new_uuid()
+    placeholder = "￼"
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+        "WFWorkflowActionParameters": {
+            "UUID": action_uuid,
+            "WFDictionaryKey": key,
+            "WFInput": {
+                "Value": {
+                    "attachmentsByRange": {
+                        "{0, 1}": {"Type": "Variable", "VariableName": variable_name}
+                    },
+                    "string": placeholder,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        },
+    }, action_uuid
+
+
 def set_dictionary_value(key: str, value: str) -> dict:
     """Set value in dictionary"""
     return {
@@ -842,6 +866,160 @@ def add_reminder(
         "WFWorkflowActionIdentifier": "is.workflow.actions.addnewreminder",
         "WFWorkflowActionParameters": params,
     }
+
+
+def add_calendar_event_from_variables(
+    title_var: str,
+    start_date_var: str = None,
+    end_date_var: str = None,
+    location_var: str = None,
+    notes_var: str = None,
+) -> dict:
+    """Add calendar event using variable values"""
+    placeholder = "￼"
+
+    params = {
+        "WFCalendarItemTitle": {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": title_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+    }
+
+    if start_date_var:
+        params["WFCalendarItemStartDate"] = {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": start_date_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+
+    if location_var:
+        params["WFCalendarItemLocation"] = {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": location_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+
+    if notes_var:
+        params["WFCalendarItemNotes"] = {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": notes_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.addnewevent",
+        "WFWorkflowActionParameters": params,
+    }
+
+
+def add_reminder_from_variable(
+    title_var: str,
+    remind_date_var: str = None,
+    notes_var: str = None,
+) -> dict:
+    """Add reminder using variable values"""
+    placeholder = "￼"
+
+    params = {
+        "WFCalendarItemTitle": {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": title_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+    }
+
+    if remind_date_var:
+        params["WFAlertEnabled"] = True
+        params["WFAlertCustomTime"] = {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": remind_date_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+
+    if notes_var:
+        params["WFCalendarItemNotes"] = {
+            "Value": {
+                "attachmentsByRange": {
+                    "{0, 1}": {"Type": "Variable", "VariableName": notes_var}
+                },
+                "string": placeholder,
+            },
+            "WFSerializationType": "WFTextTokenString",
+        }
+
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.addnewreminder",
+        "WFWorkflowActionParameters": params,
+    }
+
+
+def share_variable(variable_name: str) -> dict:
+    """Open share sheet for a variable"""
+    placeholder = "￼"
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.share",
+        "WFWorkflowActionParameters": {
+            "WFInput": {
+                "Value": {
+                    "attachmentsByRange": {
+                        "{0, 1}": {"Type": "Variable", "VariableName": variable_name}
+                    },
+                    "string": placeholder,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            }
+        },
+    }
+
+
+def menu_start_with_variable_prompt(
+    items: list[str], prompt_var: str
+) -> tuple[dict, str]:
+    """Start a menu with prompt from a variable. Returns (action, group_id)."""
+    group_id = new_uuid()
+    placeholder = "￼"
+    return {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": group_id,
+            "WFControlFlowMode": 0,
+            "WFMenuItems": items,
+            "WFMenuPrompt": {
+                "Value": {
+                    "attachmentsByRange": {
+                        "{0, 1}": {"Type": "Variable", "VariableName": prompt_var}
+                    },
+                    "string": placeholder,
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        },
+    }, group_id
 
 
 # =============================================================================
